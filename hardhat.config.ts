@@ -2,8 +2,8 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "dotenv/config";
 
-const {vars} = require("hardhat/config")
-const polygonscan=vars.get("POLYGONSCAN_API_KEY")
+const {vars} = require("hardhat/config");
+const polygonscan=process.env.POLYGONSCAN_API_KEY;
 
 const config: HardhatUserConfig = {
   solidity: {

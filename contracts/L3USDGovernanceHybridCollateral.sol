@@ -11,9 +11,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "./L3USD.sol";
-import "./L3USDReserves.sol";
 
-contract L3USDGovernance is Ownable, ReentrancyGuard, AccessControl { 
+contract L3USDGovernanceHybridCollateral is Ownable, ReentrancyGuard, AccessControl { 
     using SafeERC20 for IERC20;
 
     struct SupChange {    // logging change in stablecoin's supply
@@ -27,21 +26,21 @@ contract L3USDGovernance is Ownable, ReentrancyGuard, AccessControl {
         IERC20 colToken;
     }
 
-    
-
     mapping (uint256 => ReserveList) public rsvList;  // mapping connecting id to the collateral token
-    AggregatorV3Interface private priceOracle;
+
     L3USD private l3usd;
-    //
+    
     address private reserveContract;
-    uint256 public l3usdsupply;             
-    uint256 public supplyChangeCount;       
+    uint256 public l3usdsupply;             // Supply of our stablecoin
+    uint256 public supplyChangeCount;       // How many times supply was changed
 
-    uint256 public stableColatPrice; // Obtained by oracle using feeding `datafeed` value to the `AggregatorV3Interface` interface 
+    uint256 public stableColatPrice = 1e18; // Address of Stable Collateral, should be monitored via Oracle in production
     uint256 public stableColatAmount;
+
+    uint256 public unstableColatAmount;     // Obtained by oracle using feeding `datafeed` value to the `AggregatorV3Interface` interface
+    uint256 public unstableColPrice;
+    AggregatorV3Interface private priceOracle;
     address public datafeed;
-
-
 
     uint256 private constant COL_PRICE_TO_WEI = 1e10;
     uint256 private constant WEI_VALUE = 1e18;
@@ -66,24 +65,30 @@ contract L3USDGovernance is Ownable, ReentrancyGuard, AccessControl {
         priceOracle = AggregatorV3Interface(datafeed);
     }
 
+    function addColateralToken(IERC20 colcontract) external nonReentrant onlyRole(GOVERN_ROLE) {
+        rsvList[reserveCount].colToken = colcontract;
+        reserveCount++;
+    }
+
     function fetchColPrice() external nonReentrant onlyRole(GOVERN_ROLE) {
         ( , uint256 price, , , ) = priceOracle.latestRoundData();
         uint256 value = (price)*COL_PRICE_TO_WEI;
-        stableColatPrice = value;
+        unstableColPrice = value;
     }
-
-    
 
     function setReserveContract(address reserve) external nonReentrant onlyRole(GOVERN_ROLE) {
         reserveContract = reserve;
     }
 
-    function colateralRebalancing() internal onlyRole(GOVERN_ROLE) returns (bool) {
+    function colateralReBalancing() internal onlyRole(GOVERN_ROLE) returns (bool) {
         uint256 stableBalance = rsvList[0].colToken.balanceOf(reserveContract);
+        uint256 unstableBalance = rsvList[1].colToken.balanceOf(reserveContract);
         if (stableBalance != stableColatAmount) {
             stableColatAmount = stableBalance;
         }
-       
+        if (unstableBalance != unstableColatAmount) {
+            unstableColatAmount = unstableBalance;
+        }
         return true;
     }
 
@@ -92,19 +97,19 @@ contract L3USDGovernance is Ownable, ReentrancyGuard, AccessControl {
     }
 
     function validatePeg() external nonReentrant onlyRole(GOVERN_ROLE) {
-        bool result = colateralRebalancing();
+        bool result = colateralReBalancing();
         if (result = true) {
-            uint256 rawcolvalue = (stableColatAmount*WEI_VALUE);
+            uint256 rawcolvalue = (stableColatAmount*WEI_VALUE)+(unstableColatAmount*unstableColPrice);
             uint256 colvalue = rawcolvalue/WEI_VALUE;
             if (colvalue < l3usdsupply) {
                 uint256 supplyChange = l3usdsupply-colvalue;
-                L3USDReserves(reserveContract).withdrawCollateral(0, supplyChange);
+                l3usd.burn(supplyChange);
                 _supplyChanges[supplyChangeCount].method = "Burn";
                 _supplyChanges[supplyChangeCount].amount = supplyChange;
             }
             if (colvalue > l3usdsupply) {
                 uint256 supplyChange = colvalue-l3usdsupply;
-                L3USDReserves(reserveContract).depositCollateral(0, supplyChange);
+                l3usd.mint(supplyChange);
                 _supplyChanges[supplyChangeCount].method = "Mint";
                 _supplyChanges[supplyChangeCount].amount = supplyChange;
             }
@@ -120,4 +125,6 @@ contract L3USDGovernance is Ownable, ReentrancyGuard, AccessControl {
         l3usd.transfer(address(msg.sender), _amount);
         emit Withdraw(block.timestamp, _amount);
     }
+
+
 }
