@@ -1,0 +1,19 @@
+[Log]
+Level = 'warn'
+
+[WebServer]
+AllowOrigins = '\*'
+SecureCookies = false
+
+[WebServer.TLS]
+HTTPSPort = 0
+
+[[EVM]]
+ChainID = '1811'
+MinContractPayment = '0 link'
+
+[[EVM.Nodes]]
+Name = 'Lif3'
+WSURL = 'wss://rpc-testnet.lif3.com/'
+HTTPURL = 'https://testnet-evm.lif3.com'
+
