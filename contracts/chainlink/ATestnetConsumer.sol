@@ -26,8 +26,8 @@ contract ATestnetConsumer is ChainlinkClient, ConfirmedOwner {
      *@dev LINK address in Sepolia network: 0x779877A7B0D9E8603169DdbD7836e478b4624789
      * @dev Check https://docs.chain.link/docs/link-token-contracts/ for LINK address for the right network
      */
-    constructor() ConfirmedOwner(msg.sender) {
-        _setChainlinkToken(0x1ca91245f9A4d7B28aBE681E177551879bcbFb3c);
+    constructor(address _s_linkink) ConfirmedOwner(msg.sender) {
+        _setChainlinkToken(_s_linkink);
     }
 
     function requestEthereumPrice(
