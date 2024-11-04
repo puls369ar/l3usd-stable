@@ -17,3 +17,4 @@ Name = 'Lif3'
 WSURL = 'wss://rpc-testnet.lif3.com/'
 HTTPURL = 'https://testnet-evm.lif3.com'
 
+

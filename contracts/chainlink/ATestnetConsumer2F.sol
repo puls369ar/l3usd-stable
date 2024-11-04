@@ -13,7 +13,7 @@ import {OperatorInterface} from "@chainlink/contracts/src/v0.8/interfaces/Operat
  * DO NOT USE THIS CODE IN PRODUCTION.
  */
 
-contract ATestnetConsumerTest2F is ChainlinkClient, ConfirmedOwner {
+contract ATestnetConsumer2F is ChainlinkClient, ConfirmedOwner {
     using Chainlink for Chainlink.Request;
 
     uint256 private constant ORACLE_PAYMENT = (1 * LINK_DIVISIBILITY) / 10; // 0.1 * 10**18
@@ -34,11 +34,11 @@ contract ATestnetConsumerTest2F is ChainlinkClient, ConfirmedOwner {
 
     /**
      *  Sepolia
-     *@dev LINK address in Sepolia network: 0x779877A7B0D9E8603169DdbD7836e478b4624789
+     * @dev LINK address in Sepolia network: 0x779877A7B0D9E8603169DdbD7836e478b4624789
      * @dev Check https://docs.chain.link/docs/link-token-contracts/ for LINK address for the right network
      */
-    constructor() ConfirmedOwner(msg.sender) {
-        _setChainlinkToken(0x2C2D8a078B33bf7782a16AcCE2C5BA6653a90D5f);
+    constructor(address _s_linkink) ConfirmedOwner(msg.sender) {
+        _setChainlinkToken(_s_linkink);
     }
 
     function requestEthereumPrice(

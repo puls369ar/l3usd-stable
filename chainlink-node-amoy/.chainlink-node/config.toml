@@ -1,0 +1,20 @@
+[Log]
+Level = 'warn'
+
+[WebServer]
+AllowOrigins = '\*'
+SecureCookies = false
+
+[WebServer.TLS]
+HTTPSPort = 0
+
+[[EVM]]
+ChainID = '80002'
+MinContractPayment = '0 link'
+
+
+[[EVM.Nodes]]
+Name = 'Amoy'
+WSURL = 'wss://polygon-amoy.infura.io/ws/v3/0d808b97c77b43bbbbc1aded9b81d7de'
+HTTPURL = 'https://polygon-amoy.infura.io/v3/0d808b97c77b43bbbbc1aded9b81d7de'
+
