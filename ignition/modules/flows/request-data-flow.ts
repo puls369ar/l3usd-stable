@@ -16,9 +16,22 @@ async function chainlinkFlow() {
     const operator_address = "0xE9fb047EA6A54099C9ecb49786EE3f42fB03cea4";
     
 
-    console.log("Attaching `ATestnetConsumer` ");
+    console.log("Deploying `ATestnetConsumer` giving `MLink` address in constructor");
     const Consumer = await ethers.getContractFactory("ATestnetConsumer");
-    const consumer = await Consumer.attach("0x6196E56D45Bac15ee4679a9861Ef7e074F380dc2");
+    const consumer = await Consumer.deploy(mlink_address, { gasPrice: gasPrice, gasLimit: gasLimit });
+    const consumer_address = await consumer.getAddress()
+    console.log(consumer_address);
+    console.log("");
+
+
+
+    console.log("Calling `requestEthereumPrice()` function giving `jobId` and `operator_address`");
+    const tx = await consumer.requestEthereumPrice(operator_address,jobID);
+    console.log("TX address:", tx.hash);
+
+    
+
+
     
     console.log("Calling `requestEthereumPrice()` function giving `jobId` and `operator_address`");
     const tx1 = await consumer.requestEthereumPrice(operator_address,jobID);

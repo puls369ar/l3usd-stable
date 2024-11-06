@@ -3,7 +3,6 @@ import "@nomicfoundation/hardhat-toolbox";
 import "dotenv/config";
 
 const {vars} = require("hardhat/config");
-const polygonscan=process.env.POLYGONSCAN_API_KEY;
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -39,16 +38,20 @@ const config: HardhatUserConfig = {
   },
 
   paths: {
-    sources: "./contracts/chainlink", 
+    sources: "./contracts",
+    
   },
   
   networks: {
     polygonAmoy: {
+      
       url: process.env.POLYGON_AMOY_RPC_URL,
       accounts: [process.env.POLYGON_PRIVATE_KEY],
       
     },
     lif3Testnet: {
+      eid: 40300,
+      chainId: 1811,
       url: process.env.LIF3_TESTNET_RPC_URL,
       accounts: [process.env.LIF3_PRIVATE_KEY],
       

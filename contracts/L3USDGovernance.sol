@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import "./chainlink/ATestnetConsumer.sol";
 import "./L3USD.sol";
 import "./L3USDReserves.sol";
 
@@ -28,9 +28,8 @@ contract L3USDGovernance is Ownable, ReentrancyGuard, AccessControl {
     }
 
     
-
+    ATestnetConsumer public caller;
     mapping (uint256 => ReserveList) public rsvList;  // mapping connecting id to the collateral token
-    AggregatorV3Interface private priceOracle;
     L3USD private l3usd;
     //
     address private reserveContract;
@@ -55,27 +54,29 @@ contract L3USDGovernance is Ownable, ReentrancyGuard, AccessControl {
     event RepegAction(uint256 time, uint256 amount);
     event Withdraw(uint256 time, uint256 amount);
 
-    constructor(L3USD _l3usd) Ownable(_msgSender()) {
+    constructor(L3USD _l3usd, address consumer_address) Ownable(_msgSender()) {
         l3usd = _l3usd;
+        caller = ATestnetConsumer(consumer_address);
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(GOVERN_ROLE, _msgSender());
     }
 
-    function setDataFeedAddress(address contractaddress) external onlyRole(GOVERN_ROLE) {
-        datafeed = contractaddress;
-        priceOracle = AggregatorV3Interface(datafeed);
-    }
+    // function setDataFeedAddress(address contractaddress) external onlyRole(GOVERN_ROLE) {
+    //     datafeed = contractaddress;
+    //     priceOracle = AggregatorV3Interface(datafeed);
+    // }
 
     function fetchColPrice() external nonReentrant onlyRole(GOVERN_ROLE) {
-        ( , uint256 price, , , ) = priceOracle.latestRoundData();
-        uint256 value = (price)*COL_PRICE_TO_WEI;
-        stableColatPrice = value;
+        stableColatAmount = caller.currentPrice();
     }
-
-    
 
     function setReserveContract(address reserve) external nonReentrant onlyRole(GOVERN_ROLE) {
         reserveContract = reserve;
+    }
+
+    function addColateralToken(IERC20 colcontract) external nonReentrant onlyRole(GOVERN_ROLE) {
+        rsvList[reserveCount].colToken = colcontract;
+        reserveCount++;
     }
 
     function colateralRebalancing() internal onlyRole(GOVERN_ROLE) returns (bool) {
@@ -94,8 +95,7 @@ contract L3USDGovernance is Ownable, ReentrancyGuard, AccessControl {
     function validatePeg() external nonReentrant onlyRole(GOVERN_ROLE) {
         bool result = colateralRebalancing();
         if (result = true) {
-            uint256 rawcolvalue = (stableColatAmount*WEI_VALUE);
-            uint256 colvalue = rawcolvalue/WEI_VALUE;
+            uint256 colvalue = stableColatAmount;
             if (colvalue < l3usdsupply) {
                 uint256 supplyChange = l3usdsupply-colvalue;
                 L3USDReserves(reserveContract).withdrawCollateral(0, supplyChange);
